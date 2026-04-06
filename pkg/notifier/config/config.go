@@ -1,7 +1,6 @@
 package config
 
-
-import(
+import (
 	"github.com/godotenv/godotenv"
 	"os"
 )
@@ -10,7 +9,7 @@ type Config struct {
 	NotifierPort string
 }
 
-func LoadConfig() (*Config, error){
+func LoadConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
 		return nil, err
@@ -20,10 +19,9 @@ func LoadConfig() (*Config, error){
 	}, nil
 }
 
-
 func getEnv(key, fallback string) string {
-    if value, exists := os.LookupEnv(key); exists {
-        return value
-    }
-    return fallback
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return fallback
 }

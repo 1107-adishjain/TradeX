@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/adishjain1107/tradex/pkg/auth/app"
 	mw "github.com/adishjain1107/tradex/pkg/common/middleware"
+	"github.com/adishjain1107/tradex/pkg/notifier/app"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +14,7 @@ func Routes(application *app.App) *gin.Engine {
 	router.Use(mw.CorsMiddleware())
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"message": "ping pong",
+			"message": "notifier ping pong",
 		})
 	})
 

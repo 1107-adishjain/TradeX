@@ -7,8 +7,8 @@ import (
 )
 
 type Wallet struct {
-	USD float64 `bson:"usd" json:"usd"`
-	Tx  int     `bson:"total_trades" json:"total_trades"`
+	USD  		float64 `bson:"usd" json:"usd"`
+	TotalTrades int     `bson:"total_trades" json:"total_trades"`
 }
 
 type User struct {

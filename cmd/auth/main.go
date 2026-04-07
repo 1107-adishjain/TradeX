@@ -24,7 +24,7 @@ func main() {
 		log.Printf("Env variables loaded Successfully.")
 	}
 
-	db, err := database.Connect(cfg.MongoURI, "tradex")
+	client, db, err := database.Connect(cfg.MongoURI, "tradex")
 	if err != nil {
 		log.Fatal("Error connecting to database:", err)
 	}
@@ -63,5 +63,12 @@ func main() {
 	if shutdownerr != nil {
 		log.Fatalf("Error shutting down server: %v", shutdownerr)
 	}
+
+	if err := database.Disconnect(client); err != nil {
+		log.Printf("Error disconnecting from database: %v", err)
+	}else{
+		log.Printf("Disconnected from database.")
+	}
+
 	log.Println("Server gracefully stopped.")
 }

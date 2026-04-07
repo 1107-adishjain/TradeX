@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,35 +9,45 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var DB *mongo.Database
-
-// Connect initializes the MongoDB connection pool
-func Connect(uri string, dbName string) (*mongo.Database, error) {
+// connect initializes the MongoDB connection pool
+func Connect(uri string, dbName string) (*mongo.Client, *mongo.Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Configure the client options using your MONGO_URI
+	// configure the client options using your MONGO_URI
 	opts := options.Client().ApplyURI(uri)
 
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
-		log.Fatalf("Failed to ping MongoDB: %v", err)
-		return nil, err
+		return nil, nil, err
 	}
 
-	DB = client.Database(dbName)
-	return DB, nil
+	db := client.Database(dbName)
+	return client, db, nil
 
 }
 
-// GetCollection is a clean helper function so our services can easily grab collections.
-// Example: collection := database.GetCollection("users")
-func GetCollection(collectionName string) *mongo.Collection {
-	return DB.Collection(collectionName)
+func Disconnect(client *mongo.Client) error {
+	if client == nil {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return client.Disconnect(ctx)
+
+}
+
+func GetCollection(db *mongo.Database, collectionName string) *mongo.Collection {
+	if db == nil {
+		return nil
+	}
+
+	return db.Collection(collectionName)
 }

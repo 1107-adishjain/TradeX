@@ -66,7 +66,7 @@ func main() {
 
 	if err := database.Disconnect(client); err != nil {
 		log.Printf("Error disconnecting from database: %v", err)
-	}else{
+	} else {
 		log.Printf("Disconnected from database.")
 	}
 

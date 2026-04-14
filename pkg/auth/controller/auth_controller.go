@@ -80,7 +80,7 @@ func Login(application *app.App) gin.HandlerFunc {
 			true,
 			true,
 		)
-		
+
 		c.JSON(http.StatusOK, gin.H{
 			"message":      "login successful",
 			"access_token": authResp.AccessToken,

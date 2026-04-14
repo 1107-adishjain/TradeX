@@ -27,6 +27,8 @@ func main() {
 
 	router := api.Routes(application)
 
+	go binance.StartMultiplexStream(cfg.KafkaBroker, cfg.Symbols)
+
 	srv := &http.Server{
 		Addr:         ":" + cfg.MarketDataPort,
 		Handler:      router,

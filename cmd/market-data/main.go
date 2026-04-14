@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
+	marketdataapp "github.com/adishjain1107/tradex/pkg/market-data/app"
+	"github.com/adishjain1107/tradex/pkg/market-data/binance"
+	"github.com/adishjain1107/tradex/pkg/market-data/config"
+	api "github.com/adishjain1107/tradex/pkg/market-data/routes"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	marketdataapp "github.com/adishjain1107/tradex/pkg/market-data/app"
-	"github.com/adishjain1107/tradex/pkg/market-data/config"
-	api "github.com/adishjain1107/tradex/pkg/market-data/routes"
 )
 
 func main() {

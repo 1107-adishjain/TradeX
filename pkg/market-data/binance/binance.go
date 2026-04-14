@@ -14,7 +14,7 @@ import (
 )
 
 // StartMultiplexStream streams Binance trades and publishes updates to Kafka.
-func StartMultiplexStream(kafkaBroker string, symbols []string) {
+func StartMultiplexStream(ctx context.Context, kafkaBroker string, symbols []string) {
 	if len(symbols) == 0 {
 		log.Println("No market symbols configured. Stream not started.")
 		return
@@ -42,20 +42,38 @@ func StartMultiplexStream(kafkaBroker string, symbols []string) {
 	const reconnectDelay = 2 * time.Second
 
 	for {
+		if ctx.Err() != nil {
+			log.Println("Stopping Binance stream: context cancelled")
+			return
+		}
+
 		conn, _, err := websocket.DefaultDialer.Dial(binanceURL, nil)
 		if err != nil {
 			log.Printf("Failed to dial Binance: %v", err)
-			time.Sleep(reconnectDelay)
+			if !sleepWithContext(ctx, reconnectDelay) {
+				log.Println("Stopping Binance reconnect loop: context cancelled")
+				return
+			}
 			continue
 		}
 
 		log.Println("Connected to Binance. Ingesting live trades...")
+		connClosed := make(chan struct{})
+
+		go func() {
+			select {
+			case <-ctx.Done():
+				_ = conn.Close()
+			case <-connClosed:
+			}
+		}()
 
 		for {
 			// Wait for Binance to push a message down the tunnel
 			_, message, err := conn.ReadMessage()
 			if err != nil {
 				log.Printf("Binance connection dropped: %v", err)
+				close(connClosed)
 				_ = conn.Close()
 				break
 			}
@@ -89,7 +107,7 @@ func StartMultiplexStream(kafkaBroker string, symbols []string) {
 			}
 
 			// Push to Kafka, using the Symbol as the Key to guarantee chronological order
-			err = writer.WriteMessages(context.Background(),
+			err = writer.WriteMessages(ctx,
 				kafka.Message{
 					Key:   []byte(tradeUpdate.Symbol),
 					Value: kafkaPayload,
@@ -97,11 +115,35 @@ func StartMultiplexStream(kafkaBroker string, symbols []string) {
 			)
 
 			if err != nil {
+				if ctx.Err() != nil {
+					close(connClosed)
+					_ = conn.Close()
+					return
+				}
 				log.Printf("Failed to write to Kafka: %v", err)
 			}
 		}
 
+		if ctx.Err() != nil {
+			return
+		}
+
 		log.Printf("Reconnecting to Binance in %s...", reconnectDelay)
-		time.Sleep(reconnectDelay)
+		if !sleepWithContext(ctx, reconnectDelay) {
+			log.Println("Stopping Binance reconnect loop: context cancelled")
+			return
+		}
+	}
+}
+
+func sleepWithContext(ctx context.Context, d time.Duration) bool {
+	t := time.NewTimer(d)
+	defer t.Stop()
+
+	select {
+	case <-ctx.Done():
+		return false
+	case <-t.C:
+		return true
 	}
 }

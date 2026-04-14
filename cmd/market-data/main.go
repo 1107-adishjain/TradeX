@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	marketdataapp "github.com/adishjain1107/tradex/pkg/market-data/app"
-	"github.com/adishjain1107/tradex/pkg/market-data/binance"
-	"github.com/adishjain1107/tradex/pkg/market-data/config"
-	api "github.com/adishjain1107/tradex/pkg/market-data/routes"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	marketdataapp "github.com/adishjain1107/tradex/pkg/market-data/app"
+	"github.com/adishjain1107/tradex/pkg/market-data/binance"
+	"github.com/adishjain1107/tradex/pkg/market-data/config"
+	api "github.com/adishjain1107/tradex/pkg/market-data/routes"
 )
 
 func main() {
@@ -26,8 +27,10 @@ func main() {
 	application := marketdataapp.New(cfg)
 
 	router := api.Routes(application)
+	streamCtx, cancelStream := context.WithCancel(context.Background())
+	defer cancelStream()
 
-	go binance.StartMultiplexStream(cfg.KafkaBroker, cfg.Symbols)
+	go binance.StartMultiplexStream(streamCtx, cfg.KafkaBroker, cfg.Symbols)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.MarketDataPort,
@@ -44,6 +47,7 @@ func main() {
 		signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 		s := <-quit
 		log.Printf("Received shutdown signal: %v", s)
+		cancelStream()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		ShutdownErr <- srv.Shutdown(ctx)

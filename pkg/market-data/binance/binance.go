@@ -26,6 +26,7 @@ func StartMultiplexStream(ctx context.Context, kafkaBroker string, symbols []str
 		Topic:        "market.prices",
 		Balancer:     &kafka.LeastBytes{},
 		BatchTimeout: 10 * time.Millisecond, // Low latency for trading data
+		AllowAutoTopicCreation: true,
 	}
 	defer writer.Close()
 

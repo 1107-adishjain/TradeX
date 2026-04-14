@@ -29,8 +29,12 @@ func main() {
 	router := api.Routes(application)
 	streamCtx, cancelStream := context.WithCancel(context.Background())
 	defer cancelStream()
+	streamStopped := make(chan struct{})
 
-	go binance.StartMultiplexStream(streamCtx, cfg.KafkaBroker, cfg.Symbols)
+	go func() {
+		defer close(streamStopped)
+		binance.StartMultiplexStream(streamCtx, cfg.KafkaBroker, cfg.Symbols)
+	}()
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.MarketDataPort,
@@ -48,6 +52,14 @@ func main() {
 		s := <-quit
 		log.Printf("Received shutdown signal: %v", s)
 		cancelStream()
+
+		select {
+		case <-streamStopped:
+			log.Println("Binance stream stopped.")
+		case <-time.After(2 * time.Second):
+			log.Println("Binance stream stop not confirmed within 2s.")
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		ShutdownErr <- srv.Shutdown(ctx)

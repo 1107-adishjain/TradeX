@@ -22,13 +22,13 @@ func StartMultiplexStream(ctx context.Context, kafkaBroker string, symbols []str
 
 	// Setup the Kafka Writer (Producer)
 	writer := &kafka.Writer{
-		Addr:         kafka.TCP(kafkaBroker),
-		Topic:        "market.prices",
-		Balancer:     &kafka.LeastBytes{},
-		BatchTimeout: 10 * time.Millisecond, // Low latency for trading data
+		Addr:                   kafka.TCP(kafkaBroker),
+		Topic:                  "market.prices",
+		Balancer:               &kafka.LeastBytes{},
+		BatchTimeout:           10 * time.Millisecond, // Low latency for trading data
 		AllowAutoTopicCreation: true,
-		MaxAttempts: 10,
-		WriteTimeout: 10*time.Second,
+		MaxAttempts:            10,
+		WriteTimeout:           10 * time.Second,
 	}
 	defer writer.Close()
 
